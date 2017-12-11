@@ -177,6 +177,56 @@ def create_content_test3():
             current['vote'] = new['vote']
 
 
+def create_content_test4():
+    file_name = ''
+    the_file = ''
+    author = ''
+    post = ''
+    comment = ''
+
+    current = get_init_value()
+
+    for idx in range(0, 512000):
+        new = get_new_value(idx)
+        if new_value('thread', current, new):
+            if file_name != '':
+                the_file.write('END\n')
+
+            file_name = 'stress-test-04/stress-test' + str(new['thread']).zfill(2) + '.sh'
+            the_file = open(file_name, 'w')
+            current['thread'] = new['thread']
+
+            the_file.write('#!/bin/bash\n\n')
+            the_file.write('#chmod +x ./' + file_name + '\n\n')
+            the_file.write('IFS=$\'\\n\'\n')
+            the_file.write('post=( $(cat "./post_long") )\n')
+            the_file.write('comment=( $(cat "./comment_long") )\n\n')
+            the_file.write('./cli_wallet --server-rpc-endpoint="ws://127.0.0.1:9876" <<END\n')
+            the_file.write('unlock "test"\n')
+        elif idx % 860 == 0:
+            the_file.write('END\n\n')
+            the_file.write('sleep 3s\n\n')
+            the_file.write('./cli_wallet --server-rpc-endpoint="ws://127.0.0.1:9876" <<END\n')
+            the_file.write('unlock "test"\n')
+
+        if new_value('user', current, new):
+            author = 'user' + str(new['user']).zfill(5)
+            current['user'] = new['user']
+        if new_value('post', current, new):
+            post = 'post' + str(new['post']).zfill(2)
+            new_post(the_file, author, post)
+            current['post'] = new['post']
+        if new_value('comment', current, new):
+            comment = 'comment' + str(new['comment']).zfill(6)
+            comment_author = 'user' + str(new['comment_author']).zfill(5)
+            new_comment(the_file, comment_author, comment, author, post)
+            current['comment'] = new['comment']
+        if new_value('vote', current, new):
+            voter = 'user' + str(new['voter']).zfill(5)
+            new_vote(the_file, voter, author, post)
+            current['vote'] = new['vote']
+
+
 def get_init_value():
     init = {'thread': -1,
             'user': -1,
@@ -190,8 +240,12 @@ def get_init_value():
 
 
 def get_new_value(idx):
-    user_per_thread = 2000
-    thread = idx // 64000
+    #stress-test 3
+    #user_per_thread = 2000
+    #thread = idx // 64000
+    #stress-test 4
+    user_per_thread = 16000
+    thread = 0
     comment_author = (thread * user_per_thread) + ((idx // 4) % user_per_thread)
     voter = (thread * user_per_thread) + (idx % user_per_thread)
     new_ = {'thread': thread,
@@ -267,10 +321,11 @@ def new_vote(the_file, user, author, post):
 
 
 def main():
-    create_accounts()
+    #create_accounts()
     #create_content_test2()
     #create_chect_vote_limit()
-    create_content_test3()
+    #create_content_test3()
+    create_content_test4()
 
 if __name__ == "__main__":
     main()
